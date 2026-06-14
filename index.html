@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>食材价格对比</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:#e0e0e0;--border2:#ccc;
+  --info-bg:#e8f4fd;--info-text:#0c447c;
+  --success-bg:#eaf3de;--success-text:#27500a;
+  --warn-bg:#faeeda;--warn-text:#633806;
+  --danger-bg:#fcebeb;--danger-text:#791f1f;
+  --r:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333;
+  --text:#f0f0f0;--text2:#aaa;--text3:#777;
+  --border:#3a3a3a;--border2:#555;
+  --info-bg:#0c2240;--info-text:#85b7eb;
+  --success-bg:#173404;--success-text:#c0dd97;
+  --warn-bg:#412402;--warn-text:#fac775;
+  --danger-bg:#501313;--danger-text:#f09595;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+/* ── Sidebar ── */
+.sidebar{background:var(--bg);border-right:1px solid var(--border);padding:16px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{font-size:15px;font-weight:500;padding:0 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;color:var(--text)}
+.nav-section{font-size:11px;color:var(--text3);padding:14px 16px 6px;letter-spacing:.05em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg2);color:var(--text)}
+.nav-item.active{background:var(--info-bg);color:var(--info-text);font-weight:500}
+.nav-item i{font-size:16px}
+/* ── Main ── */
+.main{padding:20px;overflow-x:hidden}
+.page{display:none}.page.active{display:block}
+/* ── Cards ── */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* ── Stats row ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px}
+.stat{background:var(--bg2);border-radius:var(--r);padding:10px 14px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-val{font-size:21px;font-weight:500}
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.form-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text2)}
+.form-grid input,.form-grid select,.form-grid textarea{font-size:13px;padding:7px 10px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.form-grid input:focus,.form-grid select:focus{border-color:#378add}
+.hint{font-size:11px;color:var(--text3);margin-top:2px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+button{font-size:13px;padding:7px 14px;border-radius:var(--r);border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+button:hover{background:var(--bg2)}
+.btn-primary{background:var(--info-bg);color:var(--info-text);border-color:transparent}
+.btn-primary:hover{opacity:.85}
+.btn-success{background:var(--success-bg);color:var(--success-text);border-color:transparent}
+.btn-success:hover{opacity:.85}
+.btn-danger{background:var(--danger-bg);color:var(--danger-text);border-color:transparent}
+.btn-danger:hover{opacity:.85}
+.btn-warn{background:var(--warn-bg);color:var(--warn-text);border-color:transparent}
+.icon-btn{padding:4px 7px;border:none;background:transparent;cursor:pointer;border-radius:var(--r);color:var(--text3);font-size:15px;display:inline-flex;align-items:center;transition:all .15s}
+.icon-btn.edit:hover{color:var(--info-text);background:var(--info-bg)}
+.icon-btn.del:hover{color:var(--danger-text);background:var(--danger-bg)}
+/* ── Search & filter ── */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:7px 12px;flex:1;min-width:140px}
+.search-wrap input{border:none;background:transparent;outline:none;font-size:14px;color:var(--text);width:100%}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fbtn{font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}
+.fbtn:hover{background:var(--bg2)}
+.fbtn.active{background:var(--info-bg);color:var(--info-text);border-color:transparent}
+/* ── Price list ── */
+.col-hdr{display:grid;grid-template-columns:1fr 64px 80px 80px 84px 84px 52px;gap:4px;padding:6px 14px;font-size:11px;color:var(--text3);background:var(--bg2);border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
+.col-hdr span:not(:first-child){text-align:right}
+.result-list{display:flex;flex-direction:column;gap:10px}
+.item-group{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;background:var(--bg)}
+.item-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.item-name{font-size:14px;font-weight:500;flex:1}
+.cat-badge{font-size:11px;padding:2px 8px;border-radius:var(--r);background:var(--info-bg);color:var(--info-text)}
+.min-label{font-size:11px;color:var(--text2)}
+.alias-badge{font-size:11px;padding:2px 6px;border-radius:var(--r);background:var(--warn-bg);color:var(--warn-text);cursor:pointer}
+.item-row{display:grid;grid-template-columns:1fr 64px 80px 80px 84px 84px 52px;gap:4px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)}
+.item-row:last-child{border-bottom:none}
+.item-row.best-actual{background:var(--success-bg)}
+.store-name{font-size:13px;color:var(--text);font-weight:500}
+.date-str{font-size:11px;color:var(--text3)}
+.best-tag{font-size:10px;padding:1px 5px;border-radius:var(--r);margin-left:4px}
+.best-tag.actual{background:var(--success-bg);color:var(--success-text)}
+.best-tag.orig{background:var(--warn-bg);color:var(--warn-text)}
+.num-cell{text-align:right;font-weight:500;color:var(--text)}
+.num-cell.muted{color:var(--text3);font-weight:400}
+.num-cell.best-actual{color:var(--success-text)}
+.num-cell.best-orig{color:var(--warn-text)}
+.disc-badge{font-size:10px;padding:1px 5px;border-radius:var(--r);background:var(--danger-bg);color:var(--danger-text)}
+.actions-cell{display:flex;gap:2px;justify-content:flex-end}
+.empty{padding:32px;text-align:center;color:var(--text2);font-size:13px}
+.empty i{font-size:32px;display:block;margin-bottom:8px;color:var(--text3)}
+/* ── Quick add ── */
+.quick-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:12px}
+.quick-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .15s;font-size:13px}
+.quick-item:hover{background:var(--bg2);border-color:var(--border2)}
+.quick-item .qi-name{flex:1;font-weight:500}
+.quick-item .qi-meta{font-size:11px;color:var(--text3)}
+.quick-item .qi-tag{font-size:11px;padding:1px 6px;border-radius:999px;background:var(--bg2);color:var(--text2)}
+/* ── Inventory ── */
+.restock-banner{background:var(--warn-bg);border:1px solid #e0c080;border-radius:var(--rl);padding:12px 16px;margin-bottom:14px}
+.restock-title{font-size:13px;font-weight:500;color:var(--warn-text);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.restock-items{display:flex;flex-wrap:wrap;gap:6px}
+.restock-chip{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--warn-bg);border:1px solid #c0a060;color:var(--warn-text);cursor:pointer}
+.restock-chip:hover{opacity:.8}
+.inv-list{display:flex;flex-direction:column;gap:6px}
+.inv-row{display:grid;grid-template-columns:1fr 120px 100px 90px 44px;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);font-size:13px}
+.inv-row.low{border-color:#c0a060;background:var(--warn-bg)}
+.inv-row.out{border-color:#c08080;background:var(--danger-bg)}
+.inv-name{font-weight:500}
+.inv-stock{display:flex;align-items:center;gap:6px}
+.inv-stock input{width:60px;padding:3px 6px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text)}
+.inv-stock select{padding:3px 6px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text)}
+.inv-date{font-size:11px;color:var(--text3)}
+.inv-status{font-size:11px;padding:2px 7px;border-radius:999px}
+.inv-status.ok{background:var(--success-bg);color:var(--success-text)}
+.inv-status.low{background:var(--warn-bg);color:var(--warn-text)}
+.inv-status.out{background:var(--danger-bg);color:var(--danger-text)}
+/* ── Chart ── */
+.chart-wrap{position:relative;height:260px;margin-bottom:16px}
+.period-tabs{display:flex;gap:6px;margin-bottom:14px}
+.period-tab{font-size:12px;padding:4px 14px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer}
+.period-tab.active{background:var(--info-bg);color:var(--info-text);border-color:transparent}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* ── Alias ── */
+.alias-editor{background:var(--bg2);border-radius:var(--r);padding:10px;margin-top:8px}
+.alias-tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--border2);margin:3px}
+.alias-tag button{border:none;background:transparent;color:var(--text3);cursor:pointer;padding:0;font-size:12px;line-height:1}
+.alias-tag button:hover{color:var(--danger-text)}
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:13px;padding:9px 18px;border-radius:var(--r);opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+.edit-highlight{border-color:#378add !important;box-shadow:0 0 0 3px rgba(55,138,221,.15)}
+.section-hdr{font-size:13px;font-weight:500;color:var(--text);margin:0 0 10px;display:flex;align-items:center;gap:6px}
+@media(max-width:640px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .chart-grid{grid-template-columns:1fr}
+  .col-hdr,.item-row{grid-template-columns:1fr 60px 76px 0 80px 0 48px}
+  .col-hdr span:nth-child(4),.col-hdr span:nth-child(6),.item-row .orig-cell,.item-row .orig-unit-cell{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo"><i class="ti ti-leaf" aria-hidden="true"></i> 食材管家</div>
+  <div class="nav-section">主要功能</div>
+  <button class="nav-item active" onclick="showPage('price')"><i class="ti ti-chart-bar"></i> 价格对比</button>
+  <button class="nav-item" onclick="showPage('add')"><i class="ti ti-plus"></i> 录入记录</button>
+  <button class="nav-item" onclick="showPage('inventory')"><i class="ti ti-package"></i> 库存追踪</button>
+  <button class="nav-item" onclick="showPage('stats')"><i class="ti ti-report-analytics"></i> 支出统计</button>
+  <div class="nav-section">管理</div>
+  <button class="nav-item" onclick="showPage('favorites')"><i class="ti ti-star"></i> 常购食材库</button>
+  <button class="nav-item" onclick="showPage('alias')"><i class="ti ti-git-merge"></i> 名称合并</button>
+  <button class="nav-item" onclick="showPage('data')"><i class="ti ti-database"></i> 数据备份</button>
+</nav>
+
+<!-- ── Main ── -->
+<div class="main">
+
+<!-- PAGE: 价格对比 -->
+<div class="page active" id="page-price">
+  <div id="restock-banner"></div>
+  <div class="topbar">
+    <div class="search-wrap"><i class="ti ti-search" style="color:var(--text2);font-size:16px" aria-hidden="true"></i><input id="search" type="text" placeholder="搜索食材名称或渠道..." oninput="renderPrice()"></div>
+    <button onclick="showPage('add')"><i class="ti ti-plus"></i> 录入</button>
+  </div>
+  <div class="stats" id="price-stats"></div>
+  <div class="filter-row" id="price-cats"></div>
+  <div class="col-hdr">
+    <span>渠道 / 日期</span><span>克重</span><span>实付价</span><span>原价</span><span>实付/百g</span><span>原价/百g</span><span>操作</span>
+  </div>
+  <div class="result-list" id="price-list"></div>
+</div>
+
+<!-- PAGE: 录入记录 -->
+<div class="page" id="page-add">
+  <div class="section-hdr"><i class="ti ti-plus"></i> 录入购买记录</div>
+
+  <!-- Quick add from favorites -->
+  <div class="card" id="quick-card">
+    <div class="card-title"><i class="ti ti-bolt"></i> 从常购食材库快速录入</div>
+    <div class="quick-list" id="quick-list"></div>
+    <div style="font-size:12px;color:var(--text3)">点击常购食材后，仅需填写实付价和日期即可快速添加</div>
+  </div>
+
+  <!-- Full form -->
+  <div class="card" id="form-card">
+    <div class="card-title" id="form-title"><i class="ti ti-edit-circle"></i> 完整录入表单</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <label>食材名称 <input id="f-name" type="text" placeholder="如：鸡大胸"></label>
+      <label>分类
+        <select id="f-cat">
+          <option>肉类</option><option>蔬菜</option><option>海鲜</option>
+          <option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option>
+        </select>
+      </label>
+      <label>购买渠道 <input id="f-store" type="text" placeholder="如：盒马线下"></label>
+      <label>购买日期（必填）<input id="f-date" type="date" required></label>
+      <label>克重（g）<input id="f-weight" type="number" min="1" placeholder="如：360"></label>
+      <label>实付价（元）<input id="f-price" type="number" min="0" step="0.01" placeholder="如：6.04"><span class="hint">优惠后实付金额</span></label>
+      <label>原价（元）<input id="f-original" type="number" min="0" step="0.01" placeholder="如：7.90"><span class="hint">标签价，选填</span></label>
+      <label>备注<input id="f-note" type="text" placeholder="如：限时折扣"></label>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="submit-btn" onclick="submitForm()"><i class="ti ti-check"></i> 添加记录</button>
+      <button id="cancel-btn" onclick="cancelEdit()" style="display:none"><i class="ti ti-x"></i> 取消编辑</button>
+      <button onclick="clearForm()"><i class="ti ti-eraser"></i> 清空</button>
+      <button onclick="addToFavorites()"><i class="ti ti-star"></i> 加入常购库</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: 库存追踪 -->
+<div class="page" id="page-inventory">
+  <div class="section-hdr"><i class="ti ti-package"></i> 库存追踪</div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-plus"></i> 新增追踪食材</div>
+    <div class="form-grid">
+      <label>食材名称<input id="inv-name" type="text" placeholder="如：鸡蛋"></label>
+      <label>分类
+        <select id="inv-cat">
+          <option>肉类</option><option>蔬菜</option><option>海鲜</option>
+          <option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option>
+        </select>
+      </label>
+      <label>当前数量<input id="inv-qty" type="number" min="0" step="0.5" placeholder="如：12"></label>
+      <label>单位
+        <select id="inv-unit">
+          <option>个</option><option>颗</option><option>盒</option><option>袋</option><option>瓶</option><option>块</option><option>份</option><option>g</option><option>条</option><option>根</option><option>片</option><option>只</option>
+        </select>
+      </label>
+      <label>补货提醒阈值<input id="inv-threshold" type="number" min="0" step="0.5" placeholder="低于此数量提醒，如：3"><span class="hint">留空则不提醒</span></label>
+    </div>
+    <div class="btn-row"><button class="btn-primary" onclick="addInventory()"><i class="ti ti-check"></i> 添加</button></div>
+  </div>
+  <div class="section-hdr" style="margin-top:4px"><i class="ti ti-list"></i> 当前库存</div>
+  <div class="inv-list" id="inv-list"></div>
+</div>
+
+<!-- PAGE: 支出统计 -->
+<div class="page" id="page-stats">
+  <div class="section-hdr"><i class="ti ti-report-analytics"></i> 支出统计</div>
+  <div class="period-tabs">
+    <button class="period-tab active" onclick="setPeriod('week',this)">按周</button>
+    <button class="period-tab" onclick="setPeriod('month',this)">按月</button>
+  </div>
+  <div class="stats" id="spend-stats"></div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-title"><i class="ti ti-chart-bar"></i> 支出趋势</div><div class="chart-wrap"><canvas id="chart-trend"></canvas></div></div>
+    <div class="card"><div class="card-title"><i class="ti ti-chart-pie"></i> 品类占比</div><div class="chart-wrap"><canvas id="chart-cat"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-title"><i class="ti ti-building-store"></i> 渠道对比</div><div class="chart-wrap"><canvas id="chart-store"></canvas></div></div>
+</div>
+
+<!-- PAGE: 常购食材库 -->
+<div class="page" id="page-favorites">
+  <div class="section-hdr"><i class="ti ti-star"></i> 常购食材库</div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-plus"></i> 添加常购食材</div>
+    <div class="form-grid">
+      <label>食材名称<input id="fav-name" type="text" placeholder="如：鸡大胸"></label>
+      <label>分类
+        <select id="fav-cat">
+          <option>肉类</option><option>蔬菜</option><option>海鲜</option>
+          <option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option>
+        </select>
+      </label>
+      <label>常购克重（g）<input id="fav-weight" type="number" placeholder="如：360"></label>
+      <label>备注<input id="fav-note" type="text" placeholder="如：每周必买"></label>
+    </div>
+    <div class="btn-row"><button class="btn-primary" onclick="addFavorite()"><i class="ti ti-check"></i> 添加</button></div>
+  </div>
+  <div class="quick-list" id="fav-list" style="max-height:none"></div>
+</div>
+
+<!-- PAGE: 名称合并 -->
+<div class="page" id="page-alias">
+  <div class="section-hdr"><i class="ti ti-git-merge"></i> 名称合并（别名管理）</div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">将不同叫法的同一食材关联为同一组，价格对比时会合并显示。<br>例如：「鲜猪精肉丝」和「猪肉丝」归为同一组。</div>
+    <div class="form-grid">
+      <label>主名称（显示用）<input id="alias-main" type="text" placeholder="如：猪肉丝"></label>
+      <label>别名（可从现有食材中选）
+        <select id="alias-pick" onchange="pickAlias()">
+          <option value="">— 选择已有食材名 —</option>
+        </select>
+      </label>
+    </div>
+    <div id="alias-preview" style="margin-bottom:10px"></div>
+    <div class="btn-row"><button class="btn-primary" onclick="saveAlias()"><i class="ti ti-check"></i> 保存合并</button></div>
+  </div>
+  <div class="section-hdr" style="margin-top:4px"><i class="ti ti-list"></i> 已有合并组</div>
+  <div id="alias-list"></div>
+</div>
+
+<!-- PAGE: 数据备份 -->
+<div class="page" id="page-data">
+  <div class="section-hdr"><i class="ti ti-database"></i> 数据备份与恢复</div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-download"></i> 导出备份</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">建议定期导出备份。JSON 格式包含所有数据（购买记录、库存、常购库、别名），可完整恢复。CSV 格式仅包含购买记录，适合用 Excel 查看。</div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="exportJSON()"><i class="ti ti-file-download"></i> 导出 JSON（完整备份）</button>
+      <button onclick="exportCSV()"><i class="ti ti-table-export"></i> 导出 CSV（仅购买记录）</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-upload"></i> 导入恢复</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">选择之前导出的 JSON 备份文件，导入后将覆盖当前所有数据。</div>
+    <div class="btn-row">
+      <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:7px 14px;border-radius:var(--r);border:1px solid var(--border2);cursor:pointer;color:var(--text)">
+        <i class="ti ti-file-upload"></i> 选择 JSON 文件
+        <input type="file" accept=".json" onchange="importJSON(event)" style="display:none">
+      </label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--danger-text)"><i class="ti ti-alert-triangle"></i> 危险操作</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">清空所有数据并重置为初始状态，此操作不可撤销。</div>
+    <button class="btn-danger" onclick="resetAll()"><i class="ti ti-trash"></i> 清空所有数据</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage keys ──
+const KEY = 'food_v3';
+
+// ── Initial data ──
+const INIT_RECORDS = [
+  {id:1,name:"胡萝卜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:600,price:2.29,original:2.99,note:""},
+  {id:2,name:"猪后腿精瘦肉",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:260,price:6.04,original:7.90,note:""},
+  {id:3,name:"鲜猪精肉丝",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:400,price:7.61,original:9.96,note:"×2盒"},
+  {id:4,name:"鲜鸡大胸",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:360,price:6.04,original:7.90,note:""},
+  {id:5,name:"苦瓜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:500,price:3.81,original:4.99,note:""},
+  {id:6,name:"鲜鸡蛋",cat:"蛋类",store:"盒马线上",date:"2026-05-01",weight:1590,price:15.21,original:19.90,note:"30枚"},
+  {id:7,name:"切片南瓜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:500,price:1.51,original:1.98,note:""},
+  {id:8,name:"老豆腐",cat:"豆制品",store:"盒马线上",date:"2026-05-01",weight:380,price:0,original:2.99,note:"赠品"},
+  {id:9,name:"南美白虾仁",cat:"海鲜",store:"盒马线上",date:"2026-05-01",weight:300,price:15.14,original:19.80,note:"×2袋"},
+  {id:10,name:"有机土鸡鸡肉块",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:500,price:19.80,original:null,note:"×2盒"},
+  {id:11,name:"绿豆芽",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:300,price:0,original:1.87,note:"免费领菜"},
+  {id:12,name:"鲜鸡大胸",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:360,price:7.90,original:null,note:""},
+  {id:13,name:"车厘茄",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:500,price:9.90,original:null,note:""},
+  {id:14,name:"冰鲜猪梅花肉",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:400,price:14.90,original:null,note:""},
+  {id:15,name:"南美白虾仁",cat:"海鲜",store:"盒马线下",date:"2026-06-07",weight:300,price:19.80,original:null,note:"×2袋"},
+  {id:16,name:"鲜猪精肉丝",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:400,price:9.96,original:null,note:"×2盒"},
+  {id:17,name:"有机杭白菜",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:300,price:6.99,original:null,note:""},
+  {id:18,name:"意大利生菜",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:250,price:6.66,original:null,note:""},
+  {id:19,name:"白香葱",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:100,price:1.98,original:null,note:""},
+  {id:20,name:"空心菜",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:500,price:3.99,original:null,note:""},
+  {id:21,name:"蜜本南瓜",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:1500,price:4.99,original:null,note:""},
+  {id:22,name:"水果玉米",cat:"主食",store:"拼多多",date:"2026-05-10",weight:1500,price:0.10,original:null,note:"促销价"},
+  {id:23,name:"土豆",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:500,price:1.79,original:null,note:""},
+  {id:24,name:"散养鸡块",cat:"肉类",store:"沃尔玛",date:"2026-05-23",weight:360,price:9.99,original:null,note:""},
+  {id:25,name:"猪瘦肉丝",cat:"肉类",store:"沃尔玛",date:"2026-05-23",weight:200,price:5.99,original:null,note:""},
+  {id:26,name:"高原生菜",cat:"蔬菜",store:"沃尔玛",date:"2026-05-23",weight:500,price:4.98,original:null,note:""},
+  {id:27,name:"杭白菜",cat:"蔬菜",store:"沃尔玛",date:"2026-05-23",weight:200,price:1.98,original:null,note:""},
+];
+
+// ── State ──
+let DB = load();
+let nextId = DB.nextId || 28;
+let activeCat = '全部';
+let editingId = null;
+let currentPeriod = 'week';
+let pendingAliasNames = [];
+let trendChart=null, catChart=null, storeChart=null;
+
+function load(){
+  try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){}
+  return {
+    records: INIT_RECORDS.map(r=>({...r})),
+    inventory: [],
+    favorites: [],
+    aliases: [],
+    nextId: 28
+  };
+}
+function save(){
+  DB.nextId = nextId;
+  try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){}
+}
+
+// ── Navigation ──
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const navMap={price:'价格对比',add:'录入记录',inventory:'库存追踪',stats:'支出统计',favorites:'常购食材库',alias:'名称合并',data:'数据备份'};
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.textContent.trim().includes(navMap[id])) n.classList.add('active');});
+  if(id==='price') renderPrice();
+  if(id==='add') renderQuickList();
+  if(id==='inventory') renderInventory();
+  if(id==='stats') renderStats();
+  if(id==='favorites') renderFavorites();
+  if(id==='alias') renderAlias();
+}
+
+// ── Helpers ──
+function unitOf(price,weight){ return (weight&&weight>0)?price/(weight/100):null; }
+function resolvedName(name){ const g=DB.aliases.find(a=>a.aliases.includes(name)); return g?g.main:name; }
+function groupByResolved(data){
+  const map={};
+  data.forEach(r=>{
+    const key=resolvedName(r.name);
+    if(!map[key]) map[key]={name:key,cat:r.cat,rows:[]};
+    map[key].rows.push(r);
+  });
+  return Object.values(map).sort((a,b)=>a.name.localeCompare(b.name,'zh'));
+}
+function barColor(p){ return p<=30?'#3B6D11':p<=65?'#854F0B':'#A32D2D'; }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function fmtDate(d){ if(!d) return ''; const dt=new Date(d); return isNaN(dt)?d:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
+function weekKey(d){ const dt=new Date(d); const jan1=new Date(dt.getFullYear(),0,1); const w=Math.ceil(((dt-jan1)/86400000+jan1.getDay()+1)/7); return `${dt.getFullYear()}-W${String(w).padStart(2,'0')}`; }
+function monthKey(d){ const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; }
+
+// ── Price page ──
+function renderPrice(){
+  renderRestockBanner();
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  let data=DB.records;
+  if(activeCat!=='全部') data=data.filter(r=>r.cat===activeCat);
+  if(q) data=data.filter(r=>r.name.includes(q)||(r.store&&r.store.includes(q)));
+  const allCats=['全部',...new Set(DB.records.map(r=>r.cat))];
+  document.getElementById('price-cats').innerHTML=allCats.map(c=>`<button class="fbtn${c===activeCat?' active':''}" onclick="activeCat='${c}';renderPrice()">${c}</button>`).join('');
+  const groups=groupByResolved(data);
+  const multi=groups.filter(g=>g.rows.length>1);
+  const total=DB.records.reduce((s,r)=>s+r.price,0);
+  document.getElementById('price-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">食材品类</div><div class="stat-val">${groups.length}</div></div>
+    <div class="stat"><div class="stat-label">可对比品类</div><div class="stat-val">${multi.length}</div></div>
+    <div class="stat"><div class="stat-label">购买记录</div><div class="stat-val">${data.length}</div></div>
+    <div class="stat"><div class="stat-label">累计支出</div><div class="stat-val">¥${total.toFixed(0)}</div></div>`;
+  if(!groups.length){ document.getElementById('price-list').innerHTML='<div class="empty"><i class="ti ti-mood-empty"></i>没有找到相关记录</div>'; return; }
+  document.getElementById('price-list').innerHTML=groups.map(g=>{
+    const aus=g.rows.map(r=>unitOf(r.price,r.weight)).filter(v=>v!==null&&v>0);
+    const ous=g.rows.map(r=>(r.original!=null&&r.weight)?unitOf(r.original,r.weight):null).filter(v=>v!==null&&v>0);
+    const minA=aus.length?Math.min(...aus):null, maxA=aus.length?Math.max(...aus):null;
+    const minO=ous.length?Math.min(...ous):null;
+    const hasAlias=DB.aliases.find(a=>a.main===g.name||a.aliases.includes(g.name));
+    const aliasTag=hasAlias?`<span class="alias-badge" title="已合并别名" onclick="showPage('alias')">已合并</span>`:'';
+    const rows=g.rows.map(r=>{
+      const ua=unitOf(r.price,r.weight), uo=(r.original!=null&&r.weight)?unitOf(r.original,r.weight):null;
+      const isBestA=ua!==null&&ua>0&&ua===minA&&g.rows.length>1;
+      const isBestO=uo!==null&&uo>0&&uo===minO&&ous.length>1;
+      let disc='';
+      if(r.original!=null&&r.original>0&&r.price<r.original) disc=`<span class="disc-badge">省${Math.round((1-r.price/r.original)*100)}%</span>`;
+      let bar='';
+      if(ua&&maxA>0){ const p=maxA>minA?Math.round(((ua-minA)/(maxA-minA))*100):0; bar=`<div style="display:inline-block;width:${Math.max(4,Math.round((1-p/100)*44))}px;height:6px;border-radius:3px;background:${barColor(p)};vertical-align:middle"></div>`; }
+      return `<div class="item-row${isBestA?' best-actual':''}">
+        <div><div class="store-name">${r.store}${isBestA?'<span class="best-tag actual">实付最低</span>':''}</div><div class="date-str">${r.date}${r.note?' · '+r.note:''}</div>${disc}</div>
+        <div class="num-cell">${r.weight?r.weight+'g':'—'}</div>
+        <div class="num-cell${isBestA?' best-actual':''}">¥${r.price.toFixed(2)}</div>
+        <div class="num-cell orig-cell${isBestO?' best-orig':''}">${r.original!=null?'¥'+r.original.toFixed(2)+(isBestO&&ous.length>1?'<span class="best-tag orig">原价低</span>':''):'<span style="color:var(--text3)">—</span>'}</div>
+        <div class="num-cell${isBestA?' best-actual':''}">${ua?bar+' ¥'+ua.toFixed(2):'—'}</div>
+        <div class="num-cell orig-unit-cell${isBestO?' best-orig':''}">${uo?'¥'+uo.toFixed(2):'—'}</div>
+        <div class="actions-cell">
+          <button class="icon-btn edit" onclick="startEdit(${r.id})" title="编辑"><i class="ti ti-edit"></i></button>
+          <button class="icon-btn del" onclick="deleteRecord(${r.id})" title="删除"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+    const sumParts=[];
+    if(minA) sumParts.push(`实付最低 ¥${minA.toFixed(2)}/百g`);
+    if(minO&&ous.length>1) sumParts.push(`原价最低 ¥${minO.toFixed(2)}/百g`);
+    return `<div class="item-group">
+      <div class="item-header"><span class="item-name">${g.name}</span><span class="cat-badge">${g.cat}</span>${aliasTag}${sumParts.length?`<span class="min-label">${sumParts.join('　')}</span>`:''}</div>
+      ${rows}</div>`;
+  }).join('');
+}
+
+// ── Restock banner ──
+function renderRestockBanner(){
+  const low=DB.inventory.filter(i=>i.threshold!=null&&i.threshold>0&&i.qty<=i.threshold);
+  const el=document.getElementById('restock-banner');
+  if(!low.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="restock-banner"><div class="restock-title"><i class="ti ti-alert-triangle"></i> 需要补货（${low.length} 种）</div><div class="restock-items">${low.map(i=>`<span class="restock-chip" onclick="showPage('inventory')">${i.name} 剩 ${i.qty}${i.unit}</span>`).join('')}</div></div>`;
+}
+
+// ── Form / Edit ──
+function submitForm(){
+  const name=document.getElementById('f-name').value.trim();
+  const cat=document.getElementById('f-cat').value;
+  const store=document.getElementById('f-store').value.trim();
+  const date=document.getElementById('f-date').value;
+  const weight=parseFloat(document.getElementById('f-weight').value)||null;
+  const price=parseFloat(document.getElementById('f-price').value);
+  const origV=document.getElementById('f-original').value;
+  const original=origV!==''?parseFloat(origV):null;
+  const note=document.getElementById('f-note').value.trim();
+  if(!name||!store||!date||isNaN(price)){ showToast('请填写食材名称、渠道、日期和实付价'); return; }
+  const eid=document.getElementById('edit-id').value;
+  if(eid){
+    const idx=DB.records.findIndex(r=>r.id==eid);
+    if(idx>-1) DB.records[idx]={id:+eid,name,cat,store,date,weight,price,original,note};
+    showToast('已更新：'+name); editingId=null;
+  } else {
+    DB.records.push({id:nextId++,name,cat,store,date,weight,price,original,note});
+    showToast('已添加：'+name);
+    // update inventory if tracked
+    const inv=DB.inventory.find(i=>i.name===name||resolvedName(i.name)===resolvedName(name));
+    if(inv){ inv.lastBuy=date; }
+  }
+  save(); cancelEdit(); renderPrice(); showPage('price');
+}
+
+function startEdit(id){
+  const r=DB.records.find(r=>r.id===id);
+  if(!r) return;
+  showPage('add');
+  document.getElementById('edit-id').value=id;
+  document.getElementById('f-name').value=r.name;
+  document.getElementById('f-cat').value=r.cat;
+  document.getElementById('f-store').value=r.store;
+  document.getElementById('f-date').value=r.date;
+  document.getElementById('f-weight').value=r.weight||'';
+  document.getElementById('f-price').value=r.price;
+  document.getElementById('f-original').value=r.original!=null?r.original:'';
+  document.getElementById('f-note').value=r.note||'';
+  document.getElementById('form-title').innerHTML='<i class="ti ti-edit-circle"></i> 编辑记录：'+r.name;
+  document.getElementById('submit-btn').innerHTML='<i class="ti ti-check"></i> 保存修改';
+  document.getElementById('submit-btn').className='btn-success';
+  document.getElementById('cancel-btn').style.display='inline-flex';
+  document.getElementById('form-card').classList.add('edit-highlight');
+  document.getElementById('form-card').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelEdit(){
+  document.getElementById('edit-id').value='';
+  editingId=null;
+  document.getElementById('form-title').innerHTML='<i class="ti ti-edit-circle"></i> 完整录入表单';
+  document.getElementById('submit-btn').innerHTML='<i class="ti ti-check"></i> 添加记录';
+  document.getElementById('submit-btn').className='btn-primary';
+  document.getElementById('cancel-btn').style.display='none';
+  document.getElementById('form-card').classList.remove('edit-highlight');
+  clearForm();
+}
+
+function clearForm(){
+  ['f-name','f-store','f-weight','f-price','f-original','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-date').value='';
+}
+
+function deleteRecord(id){
+  const r=DB.records.find(r=>r.id===id);
+  if(!r||!confirm(`确认删除「${r.name}」（${r.store} / ${r.date}）？`)) return;
+  DB.records=DB.records.filter(r=>r.id!==id);
+  save(); renderPrice(); showToast('已删除');
+}
+
+// ── Quick add from favorites ──
+function renderQuickList(){
+  const el=document.getElementById('quick-list');
+  if(!DB.favorites.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px">尚未添加常购食材，请前往「常购食材库」添加</div>'; return; }
+  el.innerHTML=DB.favorites.map(f=>{
+    const last=DB.records.filter(r=>resolvedName(r.name)===resolvedName(f.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const lastInfo=last?`上次 ¥${last.price.toFixed(2)} @ ${last.store}`:'暂无记录';
+    return `<div class="quick-item" onclick="quickFill('${f.name}','${f.cat}',${f.weight||'null'})">
+      <span class="qi-name">${f.name}</span>
+      <span class="qi-tag">${f.cat}</span>
+      ${f.weight?`<span class="qi-meta">${f.weight}g</span>`:''}
+      <span class="qi-meta">${lastInfo}</span>
+    </div>`;
+  }).join('');
+}
+
+function quickFill(name,cat,weight){
+  document.getElementById('f-name').value=name;
+  document.getElementById('f-cat').value=cat;
+  if(weight) document.getElementById('f-weight').value=weight;
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-price').focus();
+  document.getElementById('form-card').scrollIntoView({behavior:'smooth'});
+}
+
+function addToFavorites(){
+  const name=document.getElementById('f-name').value.trim();
+  const cat=document.getElementById('f-cat').value;
+  const weight=parseFloat(document.getElementById('f-weight').value)||null;
+  if(!name){ showToast('请先填写食材名称'); return; }
+  if(DB.favorites.find(f=>f.name===name)){ showToast('已在常购库中'); return; }
+  DB.favorites.push({name,cat,weight,note:''});
+  save(); showToast('已加入常购库：'+name);
+}
+
+// ── Favorites page ──
+function addFavorite(){
+  const name=document.getElementById('fav-name').value.trim();
+  const cat=document.getElementById('fav-cat').value;
+  const weight=parseFloat(document.getElementById('fav-weight').value)||null;
+  const note=document.getElementById('fav-note').value.trim();
+  if(!name){ showToast('请填写食材名称'); return; }
+  if(DB.favorites.find(f=>f.name===name)){ showToast('已存在'); return; }
+  DB.favorites.push({name,cat,weight,note});
+  save(); renderFavorites(); showToast('已添加：'+name);
+  document.getElementById('fav-name').value=''; document.getElementById('fav-weight').value=''; document.getElementById('fav-note').value='';
+}
+
+function renderFavorites(){
+  const el=document.getElementById('fav-list');
+  if(!DB.favorites.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px">暂无常购食材</div>'; return; }
+  el.innerHTML=DB.favorites.map((f,i)=>{
+    const last=DB.records.filter(r=>resolvedName(r.name)===resolvedName(f.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    return `<div class="quick-item">
+      <span class="qi-name">${f.name}</span>
+      <span class="qi-tag">${f.cat}</span>
+      ${f.weight?`<span class="qi-meta">${f.weight}g</span>`:''}
+      <span class="qi-meta" style="flex:1">${last?`上次 ¥${last.price.toFixed(2)} @ ${last.store} · ${last.date}`:'暂无记录'}</span>
+      <button class="icon-btn del" onclick="deleteFavorite(${i})" title="移除"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function deleteFavorite(i){
+  DB.favorites.splice(i,1); save(); renderFavorites();
+}
+
+// ── Inventory ──
+function addInventory(){
+  const name=document.getElementById('inv-name').value.trim();
+  const cat=document.getElementById('inv-cat').value;
+  const qty=parseFloat(document.getElementById('inv-qty').value);
+  const unit=document.getElementById('inv-unit').value;
+  const thV=document.getElementById('inv-threshold').value;
+  const threshold=thV!==''?parseFloat(thV):null;
+  if(!name||isNaN(qty)){ showToast('请填写名称和当前数量'); return; }
+  if(DB.inventory.find(i=>i.name===name)){ showToast('已在追踪中，请直接更新数量'); return; }
+  DB.inventory.push({name,cat,qty,unit,threshold,lastBuy:null,updatedAt:new Date().toISOString().slice(0,10)});
+  save(); renderInventory(); showToast('已添加：'+name);
+  document.getElementById('inv-name').value=''; document.getElementById('inv-qty').value=''; document.getElementById('inv-threshold').value='';
+}
+
+function renderInventory(){
+  renderRestockBanner();
+  const el=document.getElementById('inv-list');
+  if(!DB.inventory.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px">暂无追踪食材，在上方添加</div>'; return; }
+  el.innerHTML=DB.inventory.map((inv,i)=>{
+    const isOut=inv.qty<=0;
+    const isLow=!isOut&&inv.threshold!=null&&inv.qty<=inv.threshold;
+    const statusClass=isOut?'out':isLow?'low':'ok';
+    const statusText=isOut?'已用完':isLow?'需补货':'库存充足';
+    const last=DB.records.filter(r=>resolvedName(r.name)===resolvedName(inv.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    return `<div class="inv-row ${statusClass}">
+      <div><div class="inv-name">${inv.name}</div><div class="inv-date">${last?`上次购买：${last.date} @ ${last.store}`:'暂无购买记录'}</div></div>
+      <div class="inv-stock">
+        <input type="number" min="0" step="0.5" value="${inv.qty}" onchange="updateInvQty(${i},this.value)" style="width:55px">
+        <select onchange="updateInvUnit(${i},this.value)">
+          ${['个','颗','盒','袋','瓶','块','份','g','条','根','片','只'].map(u=>`<option${u===inv.unit?' selected':''}>${u}</option>`).join('')}
+        </select>
+      </div>
+      <div class="inv-date">提醒阈值：${inv.threshold!=null?inv.threshold+inv.unit:'未设置'}</div>
+      <span class="inv-status ${statusClass}">${statusText}</span>
+      <button class="icon-btn del" onclick="deleteInv(${i})" title="移除追踪"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function updateInvQty(i,v){
+  DB.inventory[i].qty=parseFloat(v)||0;
+  DB.inventory[i].updatedAt=new Date().toISOString().slice(0,10);
+  save(); renderInventory();
+}
+function updateInvUnit(i,v){ DB.inventory[i].unit=v; save(); }
+function deleteInv(i){ if(!confirm('确认移除此追踪项？')) return; DB.inventory.splice(i,1); save(); renderInventory(); }
+
+// ── Stats ──
+function setPeriod(p,el){
+  currentPeriod=p;
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderStats();
+}
+
+function renderStats(){
+  const validRecords=DB.records.filter(r=>r.date&&r.date.match(/^\d{4}-\d{2}-\d{2}$/));
+  const keyFn=currentPeriod==='week'?weekKey:monthKey;
+
+  // Aggregate by period
+  const periodMap={};
+  validRecords.forEach(r=>{
+    const k=keyFn(r.date);
+    if(!periodMap[k]) periodMap[k]={total:0,cats:{}};
+    periodMap[k].total+=r.price;
+    periodMap[k].cats[r.cat]=(periodMap[k].cats[r.cat]||0)+r.price;
+  });
+  const periods=Object.keys(periodMap).sort();
+  const totals=periods.map(p=>+periodMap[p].total.toFixed(2));
+  const avg=totals.length?totals.reduce((a,b)=>a+b,0)/totals.length:0;
+  const maxSpend=totals.length?Math.max(...totals):0;
+  const maxPeriod=totals.length?periods[totals.indexOf(maxSpend)]:'—';
+
+  // Cat totals
+  const catTotals={};
+  validRecords.forEach(r=>{ catTotals[r.cat]=(catTotals[r.cat]||0)+r.price; });
+  const topCat=Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+
+  // Store totals
+  const storeTotals={};
+  validRecords.forEach(r=>{ storeTotals[r.store]=(storeTotals[r.store]||0)+r.price; });
+
+  document.getElementById('spend-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">累计支出</div><div class="stat-val">¥${validRecords.reduce((s,r)=>s+r.price,0).toFixed(0)}</div></div>
+    <div class="stat"><div class="stat-label">平均每${currentPeriod==='week'?'周':'月'}</div><div class="stat-val">¥${avg.toFixed(0)}</div></div>
+    <div class="stat"><div class="stat-label">支出最高</div><div class="stat-val">¥${maxSpend.toFixed(0)}<span style="font-size:12px;color:var(--text2);font-weight:400"> ${maxPeriod}</span></div></div>
+    <div class="stat"><div class="stat-label">最大品类</div><div class="stat-val" style="font-size:16px">${topCat?topCat[0]:'—'}</div></div>`;
+
+  const COLORS=['#378ADD','#1D9E75','#D85A30','#BA7517','#D4537E','#7F77DD','#639922','#E24B4A'];
+
+  // Trend chart
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(document.getElementById('chart-trend'),{
+    type:'bar',
+    data:{labels:periods,datasets:[{label:'支出（元）',data:totals,backgroundColor:'#378ADD99',borderColor:'#378ADD',borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}}}}
+  });
+
+  // Cat pie
+  const cats=Object.keys(catTotals), catVals=cats.map(c=>+catTotals[c].toFixed(2));
+  if(catChart) catChart.destroy();
+  catChart=new Chart(document.getElementById('chart-cat'),{
+    type:'doughnut',
+    data:{labels:cats,datasets:[{data:catVals,backgroundColor:COLORS.slice(0,cats.length),borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}}}}
+  });
+
+  // Store bar
+  const stores=Object.keys(storeTotals).sort((a,b)=>storeTotals[b]-storeTotals[a]);
+  if(storeChart) storeChart.destroy();
+  storeChart=new Chart(document.getElementById('chart-store'),{
+    type:'bar',
+    data:{labels:stores,datasets:[{label:'累计支出（元）',data:stores.map(s=>+storeTotals[s].toFixed(2)),backgroundColor:COLORS.slice(0,stores.length),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'¥'+v}},x:{ticks:{font:{size:11}}}}}
+  });
+}
+
+// ── Alias ──
+function renderAlias(){
+  const names=[...new Set(DB.records.map(r=>r.name))].sort((a,b)=>a.localeCompare(b,'zh'));
+  const sel=document.getElementById('alias-pick');
+  sel.innerHTML='<option value="">— 选择已有食材名 —</option>'+names.map(n=>`<option>${n}</option>`).join('');
+  pendingAliasNames=[];
+  renderAliasTags();
+  const el=document.getElementById('alias-list');
+  if(!DB.aliases.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px">暂无合并组</div>'; return; }
+  el.innerHTML=DB.aliases.map((a,i)=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:500">${a.main}</span>
+        <span style="font-size:11px;color:var(--text3)">主名称</span>
+        <button class="icon-btn del" onclick="deleteAlias(${i})" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+      </div>
+      <div>${a.aliases.map(n=>`<span class="alias-tag">${n} <button onclick="removeAliasName(${i},'${n}')">×</button></span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function pickAlias(){
+  const v=document.getElementById('alias-pick').value;
+  if(!v||pendingAliasNames.includes(v)) return;
+  pendingAliasNames.push(v);
+  renderAliasTags();
+  document.getElementById('alias-pick').value='';
+}
+
+function renderAliasTags(){
+  document.getElementById('alias-preview').innerHTML=pendingAliasNames.length
+    ?'<div style="font-size:12px;color:var(--text2);margin-bottom:6px">待合并的别名：</div>'+pendingAliasNames.map((n,i)=>`<span class="alias-tag">${n} <button onclick="pendingAliasNames.splice(${i},1);renderAliasTags()">×</button></span>`).join('')
+    :'';
+}
+
+function saveAlias(){
+  const main=document.getElementById('alias-main').value.trim();
+  if(!main||!pendingAliasNames.length){ showToast('请填写主名称并选择至少一个别名'); return; }
+  const existing=DB.aliases.findIndex(a=>a.main===main);
+  if(existing>-1){ DB.aliases[existing].aliases=[...new Set([...DB.aliases[existing].aliases,...pendingAliasNames])]; }
+  else { DB.aliases.push({main,aliases:[...pendingAliasNames]}); }
+  save(); pendingAliasNames=[]; document.getElementById('alias-main').value=''; renderAlias(); showToast('已保存合并：'+main);
+}
+
+function deleteAlias(i){ if(!confirm('确认删除此合并组？')) return; DB.aliases.splice(i,1); save(); renderAlias(); }
+function removeAliasName(i,n){ DB.aliases[i].aliases=DB.aliases[i].aliases.filter(a=>a!==n); if(!DB.aliases[i].aliases.length) DB.aliases.splice(i,1); save(); renderAlias(); }
+
+// ── Data ──
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`食材数据备份_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  showToast('JSON 已导出');
+}
+
+function exportCSV(){
+  const hdr='食材名称,分类,渠道,日期,克重(g),实付价(元),原价(元),实付/百g,原价/百g,备注';
+  const rows=DB.records.map(r=>{
+    const ua=unitOf(r.price,r.weight), uo=(r.original!=null&&r.weight)?unitOf(r.original,r.weight):null;
+    return [r.name,r.cat,r.store,r.date,r.weight||'',r.price.toFixed(2),r.original!=null?r.original.toFixed(2):'',ua?ua.toFixed(2):'',uo?uo.toFixed(2):'',r.note||''].join(',');
+  });
+  const blob=new Blob(['\ufeff'+hdr+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='食材价格记录.csv'; a.click();
+  showToast('CSV 已导出');
+}
+
+function importJSON(e){
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.records) throw new Error('格式错误');
+      if(!confirm(`确认导入？将覆盖当前所有数据（${d.records.length} 条购买记录）`)) return;
+      DB=d; nextId=DB.nextId||DB.records.reduce((m,r)=>Math.max(m,r.id),0)+1;
+      save(); renderPrice(); showToast('导入成功');
+    }catch(err){ alert('导入失败：文件格式不正确'); }
+  };
+  reader.readAsText(f);
+  e.target.value='';
+}
+
+function resetAll(){
+  if(!confirm('确认清空所有数据并恢复初始状态？此操作不可撤销！')) return;
+  localStorage.removeItem(KEY);
+  DB=load(); nextId=DB.nextId||28;
+  renderPrice(); showToast('已重置');
+}
+
+// ── Init ──
+renderPrice();
+</script>
+</body>
+</html>
