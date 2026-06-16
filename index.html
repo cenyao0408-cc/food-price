@@ -175,14 +175,15 @@ button:hover{background:var(--bg2)}
 <div id="preview-banner">
   <i class="ti ti-eye" style="font-size:15px"></i>
   <span>预览模式 · 示例数据 · 无法保存</span>
-  <button onclick="showAuth('register')">注册使用</button>
-  <button onclick="showAuth('login')">已有账号登录</button>
+  <button onclick="showAuth('register')">注册</button>
+  <button onclick="showAuth('login')">登录</button>
+  <button onclick="setLocalMode()" style="background:#5c3a1a">本地模式</button>
 </div>
 
 <div id="local-banner">
   <i class="ti ti-wifi-off" style="font-size:14px"></i>
   <span>本地模式（无法连接云端）· 数据仅存本设备浏览器 · 请定期导出 JSON 备份</span>
-  <button onclick="showAuth('register')" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;cursor:pointer">尝试登录云端</button>
+  <button onclick="showAuth('login')" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;cursor:pointer">尝试登录云端</button>
 </div>
 
 <div id="auth-screen">
@@ -216,7 +217,11 @@ button:hover{background:var(--bg2)}
 <div id="app">
 <nav class="sidebar">
   <div class="sidebar-logo"><i class="ti ti-leaf"></i> 食材管家</div>
-  <div class="sidebar-user"><span id="user-name">正在接入...</span><button class="logout-btn" id="logout-btn" onclick="doLogout()" style="display:none">退出</button></div>
+  <div class="sidebar-user">
+    <span id="user-name">正在接入...</span>
+    <button class="logout-btn" id="local-switch-btn" onclick="setLocalMode()" style="padding:2px 6px; font-size:10px">转本地</button>
+    <button class="logout-btn" id="logout-btn" onclick="doLogout()" style="display:none">退出</button>
+  </div>
   <div class="nav-section">主要功能</div>
   <button class="nav-item active" data-page="price" onclick="showPage('price')"><i class="ti ti-chart-bar"></i> 价格对比</button>
   <button class="nav-item" data-page="add" onclick="showPage('add')"><i class="ti ti-plus"></i> 录入记录</button>
@@ -239,7 +244,7 @@ button:hover{background:var(--bg2)}
   </div>
   <div class="stats" id="price-stats"></div>
   <div class="filter-row" id="price-cats"></div>
-  <div class="col-hdr"><span>渠道/日期</span><span>实付价</span><span>实付/百g</span></div>
+  <div class="col-hdr"><span>渠道/日期</span><span>克重</span><span>实付价</span><span>原价</span><span>实付/百g</span><span>原价/百g</span><span>操作</span></div>
   <div class="result-list" id="price-list"></div>
 </div>
 
@@ -508,7 +513,6 @@ function loadLocal(){
 
 // ── Firebase 动态加载 ──
 async function tryInitFirebase(){
-  // 提前定义空函数，防止 catch 报错
   const dummyFn = () => toast("正在尝试连接网络，请稍后...");
   window._doLogin = dummyFn;
   window._doRegister = dummyFn;
@@ -565,6 +569,7 @@ async function tryInitFirebase(){
       document.getElementById("preview-banner").style.display="flex";
       document.getElementById("local-banner").style.display="none";
       document.getElementById("logout-btn").style.display="none";
+      document.getElementById("local-switch-btn").style.display="inline-block";
       document.getElementById("user-name").textContent="预览模式";
       renderPrice();
     };
@@ -572,9 +577,7 @@ async function tryInitFirebase(){
     onAuthStateChanged(fbAuth,async(user)=>{
       if(!user){
         if(mode!=="local") setPreviewMode();
-        else {
-           document.getElementById("user-name").textContent="本地模式";
-        }
+        else { document.getElementById("user-name").textContent="本地模式"; }
         return;
       }
       currentUser=user;
@@ -599,6 +602,7 @@ async function tryInitFirebase(){
       document.getElementById("preview-banner").style.display="none";
       document.getElementById("local-banner").style.display="none";
       document.getElementById("logout-btn").style.display="";
+      document.getElementById("local-switch-btn").style.display="none";
       document.getElementById("user-name").textContent=user.displayName||user.email;
       document.getElementById("space-card").style.display="block";
       document.getElementById("space-detail").innerHTML=`你当前的共享空间 ID 是：<br><strong style="font-size:15px;color:var(--info-text)">${currentSpaceId}</strong><br><br>把这个 ID 发给朋友，朋友注册时填入此 ID，即可共用同一份数据。`;
@@ -616,18 +620,22 @@ function setPreviewMode(){
   document.getElementById("preview-banner").style.display="flex";
   document.getElementById("local-banner").style.display="none";
   document.getElementById("user-name").textContent="预览模式";
+  document.getElementById("local-switch-btn").style.display="inline-block";
   renderPrice();
 }
+
 function setLocalMode(){
   mode="local";DB=loadLocal();
   document.getElementById("preview-banner").style.display="none";
   document.getElementById("local-banner").style.display="flex";
   document.getElementById("logout-btn").style.display="none";
+  document.getElementById("local-switch-btn").style.display="none";
   document.getElementById("user-name").textContent="本地模式";
   document.getElementById("sidebar-bottom").textContent="本地模式 · 数据存浏览器";
-  toast("云端连接失败，已切换至本地存储模式（无需登录）");
+  toast("已切换至本地存储模式（无需登录）");
   renderPrice();
 }
+window.setLocalMode = setLocalMode;
 
 // ── Auth UI ──
 window.showAuth=function(tab="login"){
@@ -855,7 +863,7 @@ function renderRecentChips(){
     const r=(DB.records||[]).filter(x=>x.name===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const nameStr = n.replace(/'/g, "\\'");
     const catStr = (r?r.cat:'其他').replace(/'/g, "\\'");
-    return `<span class="chip" onclick="quickInv('${nameStr}','${catStr}')">${n}</span>`;
+    return `<span class="chip" onclick="quickInv('${nameStr}','catStr')">${n}</span>`;
   }).join(""):'<div style="font-size:12px;color:var(--text3)">近一周暂无新购入食材</div>';
 }
 window.quickInv=function(name,cat){
@@ -882,7 +890,7 @@ function renderInventory(){
     const last=(DB.records||[]).filter(r=>resolveName(r.name)===resolveName(inv.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     return `<div class="inv-row ${sc}">
       <div><div class="inv-name">${inv.name}</div><div class="inv-sub">${last?`上次：${last.date} @ ${last.store}`:"暂无记录"} · 提醒：${inv.threshold!=null?inv.threshold+inv.unit:"未设"}</div></div>
-      <div class="inv-stock"><input type="number" min="0" step="0.5" value="${inv.qty}" onchange="updInvQty(${i},this.value)"><select onchange="updInvUnit(${i},this.value)">${["个","颗","盒","袋","瓶","块","份","g","条","根","片","试"].map(u=>`<option${u===inv.unit?" selected":""}>${u}</option>`).join("")}</select></div>
+      <div class="inv-stock"><input type="number" min="0" step="0.5" value="${inv.qty}" onchange="updInvQty(${i},this.value)"><select onchange="updInvUnit(${i},this.value)">${["个","颗","盒","袋","瓶","块","份","g","条","根","片","只"].map(u=>`<option${u===inv.unit?" selected":""}>${u}</option>`).join("")}</select></div>
       <span class="inv-status ${sc}">${st}</span>
       <button class="icon-btn del" onclick="delInv(${i})"><i class="ti ti-trash"></i></button>
     </div>`;
