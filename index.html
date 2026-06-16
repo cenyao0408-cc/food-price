@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title>食材管家</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -45,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-
 .nav-item.active{background:var(--info-bg);color:var(--info-text);font-weight:500}
 .nav-item i{font-size:16px}
 .sidebar-bottom{padding:10px 16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:auto;word-break:break-all;line-height:1.6}
-.main{padding:20px;overflow-x:hidden}
+.main{padding:20px}
 .page{display:none}.page.active{display:block}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:14px}
 .card-title{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
@@ -77,7 +77,7 @@ button:hover{background:var(--bg2)}
 .fbtn{font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
 .fbtn:hover{background:var(--bg2)}
 .fbtn.active{background:var(--info-bg);color:var(--info-text);border-color:transparent}
-.col-hdr{display:grid;grid-template-columns:1fr 64px 80px 80px 84px 84px 52px;gap:4px;padding:6px 14px;font-size:11px;color:var(--text3);background:var(--bg2);border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border);border-bottom:none}
+.col-hdr{display:grid;grid-template-columns:1fr 64px 80px 80px 84px 84px 52px;gap:4px;padding:6px 14px;font-size:11px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-bottom:none;position:sticky;top:0;z-index:100}
 .col-hdr span:not(:first-child){text-align:right}
 .result-list{display:flex;flex-direction:column;gap:10px}
 .item-group{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;background:var(--bg)}
@@ -189,7 +189,7 @@ button:hover{background:var(--bg2)}
   <div class="auth-box">
     <div class="auth-logo">🥬</div>
     <div class="auth-title">食材管家</div>
-    <div class="auth-sub">登录后数据实时同步云端<br>与朋友共享同一份食材账本</div>
+    <div class="auth-sub">登录后数据实时同步云端<br>与朋友共享同一份食材账本<br><small style="opacity:0.7">（国内环境建议使用本地模式+备份）</small></div>
     <div class="auth-tabs">
       <button class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">登录</button>
       <button class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">注册</button>
@@ -202,7 +202,7 @@ button:hover{background:var(--bg2)}
       <div class="auth-switch"><a onclick="switchAuthTab('register')">注册新账号</a> · <a onclick="hideAuth()">返回预览</a></div>
     </div>
     <div id="register-form" style="display:none">
-      <div class="auth-field">昵称<input id="r-name" type="text" placeholder="如：瑶"></div>
+      <div class="auth-field">昵称<input id="r-name" type="text" placeholder="如：food"></div>
       <div class="auth-field">邮箱<input id="r-email" type="email" placeholder="your@email.com"></div>
       <div class="auth-field">密码（至少6位）<input id="r-pass" type="password" placeholder="••••••"></div>
       <div class="auth-field">共享空间 ID（选填）<input id="r-space" type="text" placeholder="留空则创建新空间"><span class="auth-hint">💡 填入朋友的共享空间 ID 可共用同一份数据</span></div>
@@ -246,16 +246,12 @@ button:hover{background:var(--bg2)}
 <div class="page" id="page-add">
   <div class="section-hdr"><i class="ti ti-plus"></i> 录入购买记录</div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-sparkles"></i> 智能识别录入（粘贴文字 / 拍照上传）</div>
+    <div class="card-title"><i class="ti ti-sparkles"></i> 智能识别录入（粘贴文字）</div>
     <div class="ai-area">
       <textarea id="ai-text" placeholder="将小票文字粘贴到这里，AI 自动解析&#10;&#10;例如：散养鸡块 360g 9.99元 沃尔玛 2026-05-23"></textarea>
       <div class="ai-row">
-        <img id="ai-img-prev" class="img-prev" style="display:none">
-        <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:6px 12px;border-radius:var(--r);border:1px solid var(--border2);cursor:pointer;color:var(--text)">
-          <i class="ti ti-camera"></i> 拍照/上传小票
-          <input type="file" accept="image/*" capture="environment" onchange="handleImg(event)" style="display:none">
-        </label>
         <button onclick="aiParse()" id="ai-btn"><i class="ti ti-wand"></i> AI 识别</button>
+        <button onclick="resetAI()"><i class="ti ti-refresh"></i> 重置</button>
         <span class="ai-status" id="ai-status"></span>
       </div>
     </div>
@@ -277,8 +273,8 @@ button:hover{background:var(--bg2)}
     <div class="card-title" id="form-title"><i class="ti ti-edit-circle"></i> 完整录入表单</div>
     <input type="hidden" id="edit-id">
     <div class="form-grid">
-      <label>食材名称<input id="f-name" type="text" placeholder="如：鸡大胸"></label>
-      <label>分类<select id="f-cat"><option>肉类</option><option>蔬菜</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option></select></label>
+      <label>食材名称<input id="f-name" type="text" placeholder="如：鸡大胸" oninput="autoGuessCat(this.value, 'f-cat')"></label>
+      <label>分类<select id="f-cat"><option>肉类</option><option>蔬菜</option><option>水果</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>冷冻</option><option>饮品</option><option>零食</option><option>日用</option><option>其他</option></select></label>
       <label>购买渠道<input id="f-store" type="text" placeholder="如：盒马线下"></label>
       <label>购买日期（必填）<input id="f-date" type="date" required></label>
       <label>克重（g）<input id="f-weight" type="number" min="1" placeholder="如：360"></label>
@@ -305,8 +301,8 @@ button:hover{background:var(--bg2)}
   <div class="card">
     <div class="card-title"><i class="ti ti-plus"></i> 手动添加</div>
     <div class="form-grid">
-      <label>食材名称<input id="inv-name" type="text" placeholder="如：鸡蛋"></label>
-      <label>分类<select id="inv-cat"><option>肉类</option><option>蔬菜</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option></select></label>
+      <label>食材名称<input id="inv-name" type="text" placeholder="如：鸡蛋" oninput="autoGuessCat(this.value, 'inv-cat')"></label>
+      <label>分类<select id="inv-cat"><option>肉类</option><option>蔬菜</option><option>水果</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>冷冻</option><option>饮品</option><option>零食</option><option>日用</option><option>其他</option></select></label>
       <label>当前数量<input id="inv-qty" type="number" min="0" step="0.5" placeholder="如：12"></label>
       <label>单位<select id="inv-unit"><option>个</option><option>颗</option><option>盒</option><option>袋</option><option>瓶</option><option>块</option><option>份</option><option>g</option><option>条</option><option>根</option><option>片</option><option>只</option></select></label>
       <label>补货提醒阈值<input id="inv-thr" type="number" min="0" step="0.5" placeholder="低于此数量提醒"><span class="hint">留空则不提醒</span></label>
@@ -350,8 +346,8 @@ button:hover{background:var(--bg2)}
   <div class="card">
     <div class="card-title"><i class="ti ti-plus"></i> 添加常购食材</div>
     <div class="form-grid">
-      <label>食材名称<input id="fav-name" type="text" placeholder="如：鸡大胸"></label>
-      <label>分类<select id="fav-cat"><option>肉类</option><option>蔬菜</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>其他</option></select></label>
+      <label>食材名称<input id="fav-name" type="text" placeholder="如：鸡大胸" oninput="autoGuessCat(this.value, 'fav-cat')"></label>
+      <label>分类<select id="fav-cat"><option>肉类</option><option>蔬菜</option><option>水果</option><option>海鲜</option><option>蛋类</option><option>豆制品</option><option>主食</option><option>调料</option><option>冷冻</option><option>饮品</option><option>零食</option><option>日用</option><option>其他</option></select></label>
       <label>常购克重（g）<input id="fav-weight" type="number" placeholder="如：360"></label>
     </div>
     <div class="btn-row"><button class="btn-primary" onclick="addFav()"><i class="ti ti-check"></i> 添加</button></div>
@@ -425,6 +421,21 @@ button:hover{background:var(--bg2)}
 const XF_APPID="668a48a6",XF_APIKEY="683d199c8fd359867b1c5031dd4dad42",XF_APISECRET="MDllYTUzMGFkNDFjYzBlNTdjZDAxNGJj";
 const LS_KEY="food_v3";
 
+// 智能匹配分类映射
+const AUTO_CATS = {
+    '肉': '肉类', '鸡': '肉类', '猪': '肉类', '牛': '肉类', '鸭': '肉类',
+    '菜': '蔬菜', '茄': '蔬菜', '椒': '蔬菜', '瓜': '蔬菜', '薯': '蔬菜',
+    '果': '水果', '莓': '水果', '枣': '水果',
+    '鱼': '海鲜', '虾': '海鲜', '蟹': '海鲜', '贝': '海鲜',
+    '蛋': '蛋类',
+    '腐': '豆制品', '豆': '豆制品',
+    '米': '主食', '面': '主食', '包': '主食',
+    '盐': '调料', '油': '调料', '酱': '调料', '醋': '调料',
+    '奶': '饮品', '水': '饮品', '汁': '饮品', '茶': '饮品',
+    '冻': '冷冻', '丸': '冷冻',
+    '薯条': '零食', '饼': '零食', '糖': '零食'
+};
+
 // ── 示例数据 ──
 const DEMO={
   records:[
@@ -444,46 +455,18 @@ const DEMO={
 };
 
 const INIT={
-  records:[
-    {id:1,name:"胡萝卜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:600,price:2.29,original:2.99,note:""},
-    {id:2,name:"猪后腿精瘦肉",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:260,price:6.04,original:7.90,note:""},
-    {id:3,name:"鲜猪精肉丝",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:400,price:7.61,original:9.96,note:"×2盒"},
-    {id:4,name:"鲜鸡大胸",cat:"肉类",store:"盒马线上",date:"2026-05-01",weight:360,price:6.04,original:7.90,note:""},
-    {id:5,name:"苦瓜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:500,price:3.81,original:4.99,note:""},
-    {id:6,name:"鲜鸡蛋",cat:"蛋类",store:"盒马线上",date:"2026-05-01",weight:1590,price:15.21,original:19.90,note:"30枚"},
-    {id:7,name:"切片南瓜",cat:"蔬菜",store:"盒马线上",date:"2026-05-01",weight:500,price:1.51,original:1.98,note:""},
-    {id:8,name:"老豆腐",cat:"豆制品",store:"盒马线上",date:"2026-05-01",weight:380,price:0,original:2.99,note:"赠品"},
-    {id:9,name:"南美白虾仁",cat:"海鲜",store:"盒马线上",date:"2026-05-01",weight:300,price:15.14,original:19.80,note:"×2袋"},
-    {id:10,name:"有机土鸡鸡肉块",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:500,price:19.80,original:null,note:"×2盒"},
-    {id:11,name:"绿豆芽",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:300,price:0,original:1.87,note:"免费领菜"},
-    {id:12,name:"鲜鸡大胸",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:360,price:7.90,original:null,note:""},
-    {id:13,name:"车厘茄",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:500,price:9.90,original:null,note:""},
-    {id:14,name:"冰鲜猪梅花肉",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:400,price:14.90,original:null,note:""},
-    {id:15,name:"南美白虾仁",cat:"海鲜",store:"盒马线下",date:"2026-06-07",weight:300,price:19.80,original:null,note:"×2袋"},
-    {id:16,name:"鲜猪精肉丝",cat:"肉类",store:"盒马线下",date:"2026-06-07",weight:400,price:9.96,original:null,note:"×2盒"},
-    {id:17,name:"有机杭白菜",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:300,price:6.99,original:null,note:""},
-    {id:18,name:"意大利生菜",cat:"蔬菜",store:"盒马线下",date:"2026-06-07",weight:250,price:6.66,original:null,note:""},
-    {id:19,name:"白香葱",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:100,price:1.98,original:null,note:""},
-    {id:20,name:"空心菜",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:500,price:3.99,original:null,note:""},
-    {id:21,name:"蜜本南瓜",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:1500,price:4.99,original:null,note:""},
-    {id:22,name:"水果玉米",cat:"主食",store:"拼多多",date:"2026-05-10",weight:1500,price:0.10,original:null,note:"促销价"},
-    {id:23,name:"土豆",cat:"蔬菜",store:"拼多多",date:"2026-05-10",weight:500,price:1.79,original:null,note:""},
-    {id:24,name:"散养鸡块",cat:"肉类",store:"沃尔玛",date:"2026-05-23",weight:360,price:9.99,original:null,note:""},
-    {id:25,name:"猪瘦肉丝",cat:"肉类",store:"沃尔玛",date:"2026-05-23",weight:200,price:5.99,original:null,note:""},
-    {id:26,name:"高原生菜",cat:"蔬菜",store:"沃尔玛",date:"2026-05-23",weight:500,price:4.98,original:null,note:""},
-    {id:27,name:"杭白菜",cat:"蔬菜",store:"沃尔玛",date:"2026-05-23",weight:200,price:1.98,original:null,note:""},
-  ],
-  inventory:[],favorites:[],aliases:[],nextId:28
+  records:[],
+  inventory:[],favorites:[],aliases:[],nextId:1
 };
 
 // ── 状态 ──
 let DB=JSON.parse(JSON.stringify(DEMO));
-let mode="preview"; // "preview" | "local" | "cloud"
+let mode="preview"; 
 let firebaseReady=false;
 let fbAuth=null,fbDB=null,fbSetDoc=null,fbDoc=null,fbGetDoc=null,fbOnSnapshot=null;
 let currentUser=null,currentSpaceId=null,unsubFS=null;
 let activeCat="全部",currentPeriod="week",currentPage="price";
-let pendingAliasNames=[],parsedRecords=[],aiImgB64=null;
+let pendingAliasNames=[],parsedRecords=[];
 let trendChart=null,catChart=null,storeChart=null;
 
 // ── 工具 ──
@@ -498,6 +481,17 @@ function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t
 function wk(d){const dt=new Date(d),j=new Date(dt.getFullYear(),0,1),w=Math.ceil(((dt-j)/86400000+j.getDay()+1)/7);return `${dt.getFullYear()}-W${String(w).padStart(2,"0")}`}
 function mk(d){const dt=new Date(d);return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`}
 function guardEdit(){if(mode==="preview"){toast("预览模式无法保存，请先登录");return false;}return true;}
+
+function autoGuessCat(name, selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    for (let key in AUTO_CATS) {
+        if (name.includes(key)) {
+            sel.value = AUTO_CATS[key];
+            break;
+        }
+    }
+}
 
 // ── 存储 ──
 async function saveDB(){
@@ -515,14 +509,23 @@ function loadLocal(){
 // ── Firebase 动态加载 ──
 async function tryInitFirebase(){
   try{
-    const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-    const {getFirestore,doc,setDoc,getDoc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const app=initializeApp({apiKey:"AIzaSyBq2Z8kTR85Ol_AQNEL3Kz_IgKOmE9buLE",authDomain:"food-manager-d7ad5.firebaseapp.com",projectId:"food-manager-d7ad5",storageBucket:"food-manager-d7ad5.firebasestorage.app",messagingSenderId:"974533800571",appId:"1:974533800571:web:23f7370c68c2827ac768de"});
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
+    const [appMod, authMod, firestoreMod] = await Promise.race([
+      Promise.all([
+        import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"),
+        import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"),
+        import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
+      ]),
+      timeout
+    ]);
+    const {initializeApp} = appMod;
+    const {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile} = authMod;
+    const {getFirestore,doc,setDoc,getDoc,onSnapshot} = firestoreMod;
+    
+    const app = initializeApp({apiKey:"AIzaSyBq2Z8kTR85Ol_AQNEL3Kz_IgKOmE9buLE",authDomain:"food-manager-d7ad5.firebaseapp.com",projectId:"food-manager-d7ad5",storageBucket:"food-manager-d7ad5.firebasestorage.app",messagingSenderId:"974533800571",appId:"1:974533800571:web:23f7370c68c2827ac768de"});
     fbAuth=getAuth(app);fbDB=getFirestore(app);fbDoc=doc;fbSetDoc=setDoc;fbGetDoc=getDoc;fbOnSnapshot=onSnapshot;
     firebaseReady=true;
 
-    // 绑定登录/注册
     window._doLogin=async function(){
       const email=document.getElementById("l-email").value.trim(),pass=document.getElementById("l-pass").value,err=document.getElementById("login-err");
       err.textContent="";
@@ -552,7 +555,6 @@ async function tryInitFirebase(){
       document.getElementById("local-banner").style.display="none";
       document.getElementById("logout-btn").style.display="none";
       document.getElementById("user-name").textContent="预览模式";
-      document.getElementById("space-card").style.display="none";
       renderPrice();
     };
 
@@ -591,8 +593,7 @@ async function tryInitFirebase(){
     });
 
   }catch(e){
-    console.log("Firebase not available, using local mode");
-    setLocalMode();
+    setPreviewMode();
   }
 }
 
@@ -604,7 +605,7 @@ function setPreviewMode(){
 }
 function setLocalMode(){
   mode="local";DB=loadLocal();
-  document.getElementById("preview-banner").style.display="none";
+  document.getElementById("preview-banner").style.display="flex";
   document.getElementById("local-banner").style.display="flex";
   document.getElementById("logout-btn").style.display="none";
   document.getElementById("user-name").textContent="本地模式";
@@ -614,7 +615,6 @@ function setLocalMode(){
 
 // ── Auth UI ──
 window.showAuth=function(tab="login"){
-  if(!firebaseReady){toast("正在连接云端，请稍候...");return;}
   document.getElementById("auth-screen").style.display="flex";
   switchAuthTab(tab);
 };
@@ -624,8 +624,8 @@ window.switchAuthTab=function(tab){
   document.getElementById("register-form").style.display=tab==="register"?"block":"none";
   document.querySelectorAll(".auth-tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tab));
 };
-window.doLogin=function(){if(window._doLogin)window._doLogin();else toast("云端连接中，请稍候");};
-window.doRegister=function(){if(window._doRegister)window._doRegister();else toast("云端连接中，请稍候");};
+window.doLogin=function(){if(window._doLogin)window._doLogin();else toast("云端连接中...");};
+window.doRegister=function(){if(window._doRegister)window._doRegister();else toast("云端连接中...");};
 window.doLogout=function(){if(window._doLogout)window._doLogout();else{mode="preview";DB=JSON.parse(JSON.stringify(DEMO));setPreviewMode();}};
 
 // ── Nav ──
@@ -741,11 +741,10 @@ window.addToFavs=async function(){
   DB.favorites.push({name,cat,weight});await saveDB();toast("已加入常购库："+name);
 };
 
-// ── AI (讯飞 WebSocket) ──
+// ── AI ──
 function xfSign(){
   const host="spark-api.xf-yun.com",path="/v3.5/chat",date=new Date().toUTCString();
   const str=`host: ${host}\ndate: ${date}\nGET ${path} HTTP/1.1`;
-  // HMAC-SHA256 via SubtleCrypto
   return crypto.subtle.importKey("raw",new TextEncoder().encode(XF_APISECRET),{name:"HMAC",hash:"SHA-256"},false,["sign"])
     .then(key=>crypto.subtle.sign("HMAC",key,new TextEncoder().encode(str)))
     .then(sig=>{
@@ -755,38 +754,28 @@ function xfSign(){
       return `wss://${host}${path}?${p}`;
     });
 }
-window.handleImg=function(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    aiImgB64=ev.target.result.split(",")[1];
-    const prev=document.getElementById("ai-img-prev");prev.src=ev.target.result;prev.style.display="block";
-    document.getElementById("ai-text").value="";
-    document.getElementById("ai-text").placeholder="已上传图片，点击「AI 识别」自动提取小票信息";
-  };
-  reader.readAsDataURL(file);
+window.resetAI = function() {
+    document.getElementById("ai-text").value = "";
+    document.getElementById("ai-text").placeholder = "将小票文字粘贴到这里...";
+    document.getElementById("parsed-result").style.display = "none";
+    document.getElementById("ai-status").textContent = "";
 };
 window.aiParse=async function(){
   const text=document.getElementById("ai-text").value.trim();
-  if(!text&&!aiImgB64){toast("请输入文字或上传图片");return;}
+  if(!text){toast("请输入文字");return;}
   const btn=document.getElementById("ai-btn"),st=document.getElementById("ai-status");
   btn.disabled=true;st.textContent="AI 识别中...";
   document.getElementById("parsed-result").style.display="none";
   try{
     const today=new Date().toISOString().slice(0,10);
-    let prompt;
-    if(aiImgB64){
-      prompt=`请识别这张小票图片中的所有食材购买信息，今天日期${today}。以JSON数组格式返回，每项包含：name(食材名)、cat(分类:肉类/蔬菜/海鲜/蛋类/豆制品/主食/调料/其他)、store(购买渠道)、date(日期YYYY-MM-DD)、weight(克重数字或null)、price(实付价数字)、original(原价数字或null)、note(备注)。只返回JSON数组。`;
-    }else{
-      prompt=`请解析以下购物记录，提取食材信息，今天日期${today}。以JSON数组格式返回，每项包含：name(食材名)、cat(分类:肉类/蔬菜/海鲜/蛋类/豆制品/主食/调料/其他)、store(渠道,未提及填"未知")、date(日期YYYY-MM-DD,未提及填今天)、weight(克重数字或null)、price(实付价数字)、original(原价数字或null)、note(备注)。只返回JSON数组，不要其他文字。\n\n记录：\n${text}`;
-    }
+    const prompt=`请解析以下购物记录，提取食材信息，今天日期${today}。以JSON数组格式返回，每项包含：name(食材名)、cat(分类:肉类/蔬菜/水果/海鲜/蛋类/豆制品/主食/调料/其他)、store(渠道,未提及填"未知")、date(日期YYYY-MM-DD,未提及填今天)、weight(克重数字或null)、price(实付价数字)、original(原价数字或null)、note(备注)。只返回JSON数组，不要其他文字。\n\n记录：\n${text}`;
     const url=await xfSign();
     const result=await new Promise((resolve,reject)=>{
       const ws=new WebSocket(url);
       let output="";
       const timer=setTimeout(()=>{ws.close();reject(new Error("请求超时"));},30000);
       ws.onopen=()=>{
-        const payload={header:{app_id:XF_APPID},parameter:{chat:{domain:"generalv3.5",max_tokens:2000}},payload:{message:{text:[{role:"user",content:aiImgB64?[{type:"image",image:aiImgB64},{type:"text",text:prompt}]:[{type:"text",text:prompt}]}]}}};
+        const payload={header:{app_id:XF_APPID},parameter:{chat:{domain:"generalv3.5",max_tokens:2000}},payload:{message:{text:[{role:"user",content:[{type:"text",text:prompt}]}]}}};
         ws.send(JSON.stringify(payload));
       };
       ws.onmessage=e=>{
@@ -797,7 +786,9 @@ window.aiParse=async function(){
       };
       ws.onerror=e=>{clearTimeout(timer);reject(new Error("WebSocket连接失败"));};
     });
-    const jsonStr=result.replace(/```json|```/g,"").trim();
+    const match = result.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error("AI 返回格式错误，未识别到 JSON 数组");
+    const jsonStr = match[0];
     parsedRecords=JSON.parse(jsonStr);
     if(!Array.isArray(parsedRecords)||!parsedRecords.length){toast("未识别到有效记录");return;}
     document.getElementById("parsed-rows").innerHTML=parsedRecords.map((r,i)=>`<div class="parsed-row"><input type="checkbox" id="pr-${i}" checked><label for="pr-${i}" style="cursor:pointer;flex:1">${r.name} · ${r.store} · ${r.date} · ¥${r.price}${r.weight?" · "+r.weight+"g":""}</label></div>`).join("");
@@ -813,8 +804,7 @@ window.importParsed=async function(){
   sel.forEach(r=>DB.records.push({id:DB.nextId++,name:r.name||"",cat:r.cat||"其他",store:r.store||"未知",date:r.date||new Date().toISOString().slice(0,10),weight:r.weight||null,price:Number(r.price)||0,original:r.original||null,note:r.note||""}));
   await saveDB();
   document.getElementById("parsed-result").style.display="none";
-  document.getElementById("ai-text").value="";aiImgB64=null;
-  document.getElementById("ai-img-prev").style.display="none";
+  resetAI();
   toast(`已导入 ${sel.length} 条记录`);showPage("price");
 };
 
@@ -824,12 +814,15 @@ function renderQuickList(){
   if(!DB.favorites.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px">尚未添加常购食材</div>';return;}
   el.innerHTML=DB.favorites.map(f=>{
     const last=(DB.records||[]).filter(r=>resolveName(r.name)===resolveName(f.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
-    return `<div class="quick-item" onclick="quickFill(${JSON.stringify(f.name)},${JSON.stringify(f.cat)},${f.weight||"null"})"><span class="qi-name">${f.name}</span><span class="qi-tag">${f.cat}</span>${f.weight?`<span class="qi-meta">${f.weight}g</span>`:""}<span class="qi-meta" style="flex:1">${last?`上次 ¥${last.price.toFixed(2)} @ ${last.store}`:"暂无记录"}</span></div>`;
+    const n = f.name.replace(/'/g, "\\'");
+    const c = f.cat.replace(/'/g, "\\'");
+    return `<div class="quick-item" onclick="quickFill('${n}','${c}',${f.weight||0})"><span class="qi-name">${f.name}</span><span class="qi-tag">${f.cat}</span>${f.weight?`<span class="qi-meta">${f.weight}g</span>`:""}<span class="qi-meta" style="flex:1">${last?`上次 ¥${last.price.toFixed(2)} @ ${last.store}`:"暂无记录"}</span></div>`;
   }).join("");
 }
 window.quickFill=function(name,cat,weight){
-  document.getElementById("f-name").value=name;document.getElementById("f-cat").value=cat;
-  if(weight)document.getElementById("f-weight").value=weight;
+  document.getElementById("f-name").value=name;
+  document.getElementById("f-cat").value=cat;
+  if(weight) document.getElementById("f-weight").value=weight;
   document.getElementById("f-date").value=new Date().toISOString().slice(0,10);
   document.getElementById("f-price").focus();
   document.getElementById("form-card").scrollIntoView({behavior:"smooth"});
@@ -842,9 +835,18 @@ function renderRecentChips(){
   const recent=[...new Set((DB.records||[]).filter(r=>{try{return new Date(r.date)>=ago}catch(e){return false}}).map(r=>r.name))];
   const tracked=new Set((DB.inventory||[]).map(i=>i.name));
   const avail=recent.filter(n=>!tracked.has(n));
-  el.innerHTML=avail.length?avail.map(n=>{const r=(DB.records||[]).filter(x=>x.name===n).sort((a,b)=>b.date.localeCompare(a.date))[0];return `<span class="chip" onclick="quickInv(${JSON.stringify(n)},${JSON.stringify(r?r.cat:'其他')})">${n}</span>`;}).join(""):'<div style="font-size:12px;color:var(--text3)">近一周暂无新购入食材</div>';
+  el.innerHTML=avail.length?avail.map(n=>{
+    const r=(DB.records||[]).filter(x=>x.name===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const nameStr = n.replace(/'/g, "\\'");
+    const catStr = (r?r.cat:'其他').replace(/'/g, "\\'");
+    return `<span class="chip" onclick="quickInv('${nameStr}','${catStr}')">${n}</span>`;
+  }).join(""):'<div style="font-size:12px;color:var(--text3)">近一周暂无新购入食材</div>';
 }
-window.quickInv=function(name,cat){document.getElementById("inv-name").value=name;document.getElementById("inv-cat").value=cat;document.getElementById("inv-qty").focus();};
+window.quickInv=function(name,cat){
+    document.getElementById("inv-name").value=name;
+    document.getElementById("inv-cat").value=cat;
+    document.getElementById("inv-qty").focus();
+};
 window.addInv=async function(){
   if(!guardEdit())return;
   const name=document.getElementById("inv-name").value.trim(),cat=document.getElementById("inv-cat").value,qty=parseFloat(document.getElementById("inv-qty").value),unit=document.getElementById("inv-unit").value,thV=document.getElementById("inv-thr").value,threshold=thV!==""?parseFloat(thV):null;
@@ -874,7 +876,7 @@ window.updInvQty=async function(i,v){DB.inventory[i].qty=parseFloat(v)||0;DB.inv
 window.updInvUnit=async function(i,v){DB.inventory[i].unit=v;await saveDB();};
 window.delInv=async function(i){if(!confirm("确认移除？"))return;DB.inventory.splice(i,1);await saveDB();renderInventory();};
 
-// ── Recipe (讯飞 WebSocket) ──
+// ── Recipe ──
 function renderRecipePg(){
   const el=document.getElementById("recipe-inv");if(!el)return;
   const items=(DB.inventory||[]).filter(i=>i.qty>0);
@@ -1002,9 +1004,7 @@ window.clearAll=async function(){
 };
 
 // ── 初始化 ──
-// 先渲染示例数据（不依赖 Firebase）
 renderPrice();
-// 再异步加载 Firebase
 tryInitFirebase();
 </script>
 </body>
