@@ -11,11 +11,11 @@
 :root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--text:#1a1a1a;--text2:#666;--text3:#999;--border:#e0e0e0;--border2:#ccc;--info-bg:#e8f4fd;--info-text:#0c447c;--success-bg:#eaf3de;--success-text:#27500a;--warn-bg:#faeeda;--warn-text:#633806;--danger-bg:#fcebeb;--danger-text:#791f1f;--r:8px;--rl:12px}
 @media(prefers-color-scheme:dark){:root{--bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333;--text:#f0f0f0;--text2:#aaa;--text3:#777;--border:#3a3a3a;--border2:#555;--info-bg:#0c2240;--info-text:#85b7eb;--success-bg:#173404;--success-text:#c0dd97;--warn-bg:#412402;--warn-text:#fac775;--danger-bg:#501313;--danger-text:#f09595}}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
-#preview-banner{background:linear-gradient(135deg,#1a3a5c,#0c6e4f);color:#fff;text-align:center;padding:10px 16px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:200}
+#preview-banner{background:linear-gradient(135deg,#1a3a5c,#0c6e4f);color:#fff;text-align:center;padding:10px 16px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;position:relative;z-index:200}
 #preview-banner span{opacity:.9}
 #preview-banner button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 14px;border-radius:999px;font-size:12px;cursor:pointer}
 #preview-banner button:hover{background:rgba(255,255,255,.35)}
-#local-banner{background:linear-gradient(135deg,#5c3a1a,#6e4f0c);color:#fff;text-align:center;padding:8px 16px;font-size:12px;display:none;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+#local-banner{background:linear-gradient(135deg,#5c3a1a,#6e4f0c);color:#fff;text-align:center;padding:8px 16px;font-size:12px;display:none;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;position:relative;z-index:200}
 #auth-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300}
 .auth-box{background:var(--bg);border-radius:var(--rl);padding:32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .auth-logo{text-align:center;font-size:32px;margin-bottom:8px}
@@ -115,7 +115,6 @@ button:hover{background:var(--bg2)}
 .ai-area textarea:focus{border-color:#378add}
 .ai-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
 .ai-status{font-size:12px;color:var(--text2)}
-.img-prev{max-width:80px;max-height:60px;border-radius:var(--r);border:1px solid var(--border);object-fit:cover}
 .parsed-box{background:var(--success-bg);border:1px solid var(--success-text);border-radius:var(--r);padding:10px;margin-top:8px;max-height:180px;overflow-y:auto}
 .parsed-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:12px}
 .parsed-row:last-child{border-bottom:none}
@@ -164,9 +163,9 @@ button:hover{background:var(--bg2)}
   .chart-grid{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
-  .col-hdr{display:none}
-  .item-row{grid-template-columns:1fr auto auto}
-  .item-row .orig-cell,.item-row .orig-unit-cell,.item-row .weight-cell{display:none}
+  .col-hdr{display:grid;grid-template-columns:1fr 70px 60px;position:sticky;top:0;z-index:100}
+  .item-row{grid-template-columns:1fr 70px 60px}
+  .item-row .orig-cell,.item-row .orig-unit-cell,.item-row .weight-cell,.item-row .actions-cell{display:none}
   .inv-row{grid-template-columns:1fr 120px 40px}
 }
 </style>
@@ -183,6 +182,7 @@ button:hover{background:var(--bg2)}
 <div id="local-banner">
   <i class="ti ti-wifi-off" style="font-size:14px"></i>
   <span>本地模式（无法连接云端）· 数据仅存本设备浏览器 · 请定期导出 JSON 备份</span>
+  <button onclick="showAuth('register')" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;cursor:pointer">尝试登录云端</button>
 </div>
 
 <div id="auth-screen">
@@ -216,7 +216,7 @@ button:hover{background:var(--bg2)}
 <div id="app">
 <nav class="sidebar">
   <div class="sidebar-logo"><i class="ti ti-leaf"></i> 食材管家</div>
-  <div class="sidebar-user"><span id="user-name">预览模式</span><button class="logout-btn" id="logout-btn" onclick="doLogout()" style="display:none">退出</button></div>
+  <div class="sidebar-user"><span id="user-name">正在接入...</span><button class="logout-btn" id="logout-btn" onclick="doLogout()" style="display:none">退出</button></div>
   <div class="nav-section">主要功能</div>
   <button class="nav-item active" data-page="price" onclick="showPage('price')"><i class="ti ti-chart-bar"></i> 价格对比</button>
   <button class="nav-item" data-page="add" onclick="showPage('add')"><i class="ti ti-plus"></i> 录入记录</button>
@@ -239,7 +239,7 @@ button:hover{background:var(--bg2)}
   </div>
   <div class="stats" id="price-stats"></div>
   <div class="filter-row" id="price-cats"></div>
-  <div class="col-hdr"><span>渠道/日期</span><span>克重</span><span>实付价</span><span>原价</span><span>实付/百g</span><span>原价/百g</span><span>操作</span></div>
+  <div class="col-hdr"><span>渠道/日期</span><span>实付价</span><span>实付/百g</span></div>
   <div class="result-list" id="price-list"></div>
 </div>
 
@@ -508,6 +508,11 @@ function loadLocal(){
 
 // ── Firebase 动态加载 ──
 async function tryInitFirebase(){
+  // 提前定义空函数，防止 catch 报错
+  const dummyFn = () => toast("正在尝试连接网络，请稍后...");
+  window._doLogin = dummyFn;
+  window._doRegister = dummyFn;
+
   try{
     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
     const [appMod, authMod, firestoreMod] = await Promise.race([
@@ -530,7 +535,10 @@ async function tryInitFirebase(){
       const email=document.getElementById("l-email").value.trim(),pass=document.getElementById("l-pass").value,err=document.getElementById("login-err");
       err.textContent="";
       try{await signInWithEmailAndPassword(fbAuth,email,pass);}
-      catch(e){err.textContent=e.code==="auth/invalid-credential"?"邮箱或密码错误":e.message;}
+      catch(e){
+        if(e.code==="auth/network-request-failed") err.textContent="网络连接失败：请检查加速器。注意：直接打开 HTML 文件(file://)会导致登录失败，请使用本地服务器(Live Server)环境运行。";
+        else err.textContent=e.code==="auth/invalid-credential"?"邮箱或密码错误":e.message;
+      }
     };
     window._doRegister=async function(){
       const name=document.getElementById("r-name").value.trim(),email=document.getElementById("r-email").value.trim(),pass=document.getElementById("r-pass").value,space=document.getElementById("r-space").value.trim()||null,err=document.getElementById("reg-err");
@@ -544,7 +552,10 @@ async function tryInitFirebase(){
         await setDoc(doc(fbDB,"users",cred.user.uid),{name,email,spaceId,createdAt:new Date().toISOString()});
         const sp=await getDoc(doc(fbDB,"spaces",spaceId));
         if(!sp.exists())await setDoc(doc(fbDB,"spaces",spaceId),JSON.parse(JSON.stringify(INIT)));
-      }catch(e){document.getElementById("reg-err").textContent=e.code==="auth/email-already-in-use"?"该邮箱已注册":e.message;}
+      }catch(e){
+        if(e.code==="auth/network-request-failed") err.textContent="网络连接失败：请检查加速器。注意：直接打开 HTML 文件(file://)会导致登录失败，请使用本地服务器(Live Server)环境运行。";
+        else err.textContent=e.code==="auth/email-already-in-use"?"该邮箱已注册":e.message;
+      }
     };
     window._doLogout=async function(){
       if(unsubFS)unsubFS();
@@ -560,7 +571,10 @@ async function tryInitFirebase(){
 
     onAuthStateChanged(fbAuth,async(user)=>{
       if(!user){
-        if(mode!=="local")setPreviewMode();
+        if(mode!=="local") setPreviewMode();
+        else {
+           document.getElementById("user-name").textContent="本地模式";
+        }
         return;
       }
       currentUser=user;
@@ -593,7 +607,7 @@ async function tryInitFirebase(){
     });
 
   }catch(e){
-    setPreviewMode();
+    setLocalMode();
   }
 }
 
@@ -601,15 +615,17 @@ function setPreviewMode(){
   mode="preview";DB=JSON.parse(JSON.stringify(DEMO));
   document.getElementById("preview-banner").style.display="flex";
   document.getElementById("local-banner").style.display="none";
+  document.getElementById("user-name").textContent="预览模式";
   renderPrice();
 }
 function setLocalMode(){
   mode="local";DB=loadLocal();
-  document.getElementById("preview-banner").style.display="flex";
+  document.getElementById("preview-banner").style.display="none";
   document.getElementById("local-banner").style.display="flex";
   document.getElementById("logout-btn").style.display="none";
   document.getElementById("user-name").textContent="本地模式";
   document.getElementById("sidebar-bottom").textContent="本地模式 · 数据存浏览器";
+  toast("云端连接失败，已切换至本地存储模式（无需登录）");
   renderPrice();
 }
 
@@ -866,7 +882,7 @@ function renderInventory(){
     const last=(DB.records||[]).filter(r=>resolveName(r.name)===resolveName(inv.name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     return `<div class="inv-row ${sc}">
       <div><div class="inv-name">${inv.name}</div><div class="inv-sub">${last?`上次：${last.date} @ ${last.store}`:"暂无记录"} · 提醒：${inv.threshold!=null?inv.threshold+inv.unit:"未设"}</div></div>
-      <div class="inv-stock"><input type="number" min="0" step="0.5" value="${inv.qty}" onchange="updInvQty(${i},this.value)"><select onchange="updInvUnit(${i},this.value)">${["个","颗","盒","袋","瓶","块","份","g","条","根","片","只"].map(u=>`<option${u===inv.unit?" selected":""}>${u}</option>`).join("")}</select></div>
+      <div class="inv-stock"><input type="number" min="0" step="0.5" value="${inv.qty}" onchange="updInvQty(${i},this.value)"><select onchange="updInvUnit(${i},this.value)">${["个","颗","盒","袋","瓶","块","份","g","条","根","片","试"].map(u=>`<option${u===inv.unit?" selected":""}>${u}</option>`).join("")}</select></div>
       <span class="inv-status ${sc}">${st}</span>
       <button class="icon-btn del" onclick="delInv(${i})"><i class="ti ti-trash"></i></button>
     </div>`;
